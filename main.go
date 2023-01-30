@@ -20,7 +20,7 @@ const (
 
 func main() {
 	app := fiber.New(fiber.Config{Immutable: true})
-	app.Use(cors.New(cors.Config{AllowOrigins: "localhost:3000 archive.mrcheat.org:3000"}))
+	app.Use(cors.New(cors.Config{AllowCredentials: true}))
 	app.Use(logger.New())
 	storageFactory := storage.New("files")
 	app.Get("/begin", func(ctx *fiber.Ctx) error {
