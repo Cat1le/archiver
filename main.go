@@ -11,6 +11,7 @@ import (
 	"mime"
 	"mime/multipart"
 	"net/url"
+	"os"
 )
 
 const (
@@ -87,7 +88,13 @@ func main() {
 		defer store.Reset()
 		return ctx.SendFile(store.ZipPath())
 	})
-	err := app.Listen("0.0.0.0:8080")
+	addr := ""
+	if os.Getenv("mode") == "prod" {
+		addr = "archive.mrcheat.org:8080"
+	} else {
+		addr = "0.0.0.0:8080"
+	}
+	err := app.Listen(addr)
 	if err != nil {
 		panic(err)
 	}
