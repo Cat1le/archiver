@@ -3,6 +3,7 @@ package storage
 import (
 	"archive/zip"
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
@@ -32,11 +33,11 @@ type Status struct {
 
 func New(dir string) *Partial {
 	err := os.MkdirAll(dir, os.ModeDir)
-	os.Chmod(dir, 0777)
-	os.Chown(dir, os.Getuid(), os.Getgid())
 	if err != nil {
 		panic(err)
 	}
+	os.Chmod(dir, 0777)
+	os.Chown(dir, os.Getuid(), os.Getgid())
 	return &Partial{map[string]*Storage{}, dir}
 }
 
@@ -49,10 +50,10 @@ func (p Partial) Session(session string) *Storage {
 	if !ok {
 		pt := path.Join(p.dir, session)
 		err := os.MkdirAll(pt, os.ModeDir)
-		os.Chmod(pt, 0777)
 		if err != nil {
 			panic(err)
 		}
+		os.Chmod(pt, 0777)
 		storage = &Storage{
 			p.dir,
 			session,
@@ -81,16 +82,11 @@ func (s *Storage) ZipPath() string {
 
 func (s *Storage) Create(file *multipart.FileHeader) string {
 	createdFile, err := os.Create(path.Join(s.dir, s.session, file.Filename))
-	os.Chmod(createdFile.Name(), 0777)
-	defer func() {
-		err = createdFile.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
 	if err != nil {
 		panic(err)
 	}
+	os.Chmod(createdFile.Name(), 0777)
+	defer createdFile.Close()
 	open, err := file.Open()
 	if err != nil {
 		panic(err)
@@ -150,12 +146,12 @@ func (s *Storage) Zip() {
 	s.status.Code = CodeRunning
 	zipName := path.Join(s.dir, s.session+"-result.zip")
 	create, err := os.Create(zipName)
-	os.Chmod(create.Name(), 0777)
 	if err != nil {
 		panic(err)
 	}
+	os.Chmod(create.Name(), 0777)
 	zipFile := zip.NewWriter(create)
-	s.writeRecursive(zipFile)
+	s.writeDir(zipFile)
 	err = zipFile.Close()
 	if err != nil {
 		panic(err)
@@ -168,7 +164,7 @@ func (s *Storage) Zip() {
 	s.zip = zipName
 }
 
-func (s *Storage) writeRecursive(writer *zip.Writer) {
+func (s *Storage) writeDir(writer *zip.Writer) {
 	entries, err := os.ReadDir(path.Join(s.dir, s.session))
 	if err != nil {
 		panic(err)
@@ -178,6 +174,7 @@ func (s *Storage) writeRecursive(writer *zip.Writer) {
 		if entry.IsDir() {
 			panic("invalid state: inner directory detected")
 		} else {
+			fmt.Println("Entry: ", entry.Name())
 			header := &zip.FileHeader{}
 			header.Name = path.Join(entry.Name())
 			withHeader, err := writer.CreateHeader(header)

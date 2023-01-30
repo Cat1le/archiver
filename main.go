@@ -10,19 +10,20 @@ import (
 	"github.com/gofiber/fiber/v2/utils"
 	"mime"
 	"mime/multipart"
+	"net/url"
 )
 
 const (
 	FileMaxSize         = 1024 * 1024 * 1024
 	FileMaxSizeReadable = "1GB"
-	StorageDirectory    = "archiver"
+	StorageDirectory    = "files"
 )
 
 func main() {
-	app := fiber.New(fiber.Config{Immutable: true})
+	app := fiber.New(fiber.Config{Immutable: true, BodyLimit: FileMaxSize * 2})
 	app.Use(cors.New(cors.Config{AllowCredentials: true}))
 	app.Use(logger.New())
-	storageFactory := storage.New("files")
+	storageFactory := storage.New(StorageDirectory)
 	app.Get("/begin", func(ctx *fiber.Ctx) error {
 		return ctx.SendString(utils.UUIDv4())
 	})
@@ -57,6 +58,10 @@ func main() {
 		file := ctx.Params("file", "")
 		if file == "" {
 			return errors.New("file is empty")
+		}
+		file, err := url.QueryUnescape(file)
+		if err != nil {
+			return errors.New("cannot decode file")
 		}
 		return store.Delete(file)
 	})
