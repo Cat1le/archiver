@@ -32,6 +32,8 @@ type Status struct {
 
 func New(dir string) *Partial {
 	err := os.MkdirAll(dir, os.ModeDir)
+	os.Chmod(dir, 0777)
+	os.Chown(dir, os.Getuid(), os.Getgid())
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +49,7 @@ func (p Partial) Session(session string) *Storage {
 	if !ok {
 		pt := path.Join(p.dir, session)
 		err := os.MkdirAll(pt, os.ModeDir)
-		os.Chmod(pt, os.FileMode(0777))
+		os.Chmod(pt, 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -79,7 +81,7 @@ func (s *Storage) ZipPath() string {
 
 func (s *Storage) Create(file *multipart.FileHeader) string {
 	createdFile, err := os.Create(path.Join(s.dir, s.session, file.Filename))
-	os.Chmod(createdFile.Name(), os.FileMode(0777))
+	os.Chmod(createdFile.Name(), 0777)
 	defer func() {
 		err = createdFile.Close()
 		if err != nil {
@@ -148,7 +150,7 @@ func (s *Storage) Zip() {
 	s.status.Code = CodeRunning
 	zipName := path.Join(s.dir, s.session+"-result.zip")
 	create, err := os.Create(zipName)
-	os.Chmod(create.Name(), os.FileMode(0777))
+	os.Chmod(create.Name(), 0777)
 	if err != nil {
 		panic(err)
 	}
