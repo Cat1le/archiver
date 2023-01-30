@@ -22,7 +22,7 @@ func main() {
 	app := fiber.New(fiber.Config{Immutable: true})
 	app.Use(cors.New(cors.Config{AllowCredentials: true}))
 	app.Use(logger.New())
-	storageFactory := storage.New(StorageDirectory)
+	storageFactory := storage.New("files")
 	app.Get("/begin", func(ctx *fiber.Ctx) error {
 		return ctx.SendString(utils.UUIDv4())
 	})

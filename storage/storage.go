@@ -45,7 +45,9 @@ func NewTemp(dir string) *Partial {
 func (p Partial) Session(session string) *Storage {
 	storage, ok := p.statuses[session]
 	if !ok {
-		err := os.MkdirAll(path.Join(p.dir, session), os.ModeDir)
+		pt := path.Join(p.dir, session)
+		err := os.MkdirAll(pt, os.ModeDir)
+		os.Chmod(pt, os.FileMode(0777))
 		if err != nil {
 			panic(err)
 		}
@@ -77,6 +79,7 @@ func (s *Storage) ZipPath() string {
 
 func (s *Storage) Create(file *multipart.FileHeader) string {
 	createdFile, err := os.Create(path.Join(s.dir, s.session, file.Filename))
+	os.Chmod(createdFile.Name(), os.FileMode(0777))
 	defer func() {
 		err = createdFile.Close()
 		if err != nil {
@@ -145,6 +148,7 @@ func (s *Storage) Zip() {
 	s.status.Code = CodeRunning
 	zipName := path.Join(s.dir, s.session+"-result.zip")
 	create, err := os.Create(zipName)
+	os.Chmod(create.Name(), os.FileMode(0777))
 	if err != nil {
 		panic(err)
 	}
